@@ -1,0 +1,20 @@
+---
+# Sample configuration file
+collections:
+    landelijk:
+        number: 7
+        keywords:
+            - elstar
+            - colgate
+            - andrèlon
+            # Add more items or keywords here
+    etos:
+        number: 11
+        keywords:
+            - vitamine
+            - multi green
+            - neutral
+    gall:
+        number: 9
+        keywords:
+            - grolsch
