@@ -25,21 +25,18 @@
 """
 
 import json
-# import smtplib
-
+import requests
+import yaml
 from bs4 import BeautifulSoup
 
-with open("bonus.html") as f:
-    testdata = f.read()
 
-
-def retrieve_json_from_bonus_html_page(html_text):
+def extract_json_from_bonus_html_page(html_text):
     """Extract the json from the bonus html page
 
     html_text -- a string with the html text
     returns the parsed data from the json
     """
-    soup = BeautifulSoup(testdata, "html.parser")
+    soup = BeautifulSoup(html_text, "html.parser")
 
     bonus_data_json_text = ""
 
@@ -95,15 +92,62 @@ def check_collection(b_json, collection, keywords):
     for item in b_json["collections"][collection]["items"]:
         for keyword in keywords:
             if keyword in item['title'].lower():
-                print(keyword + "\t" + item['title'].lower())
-                print("Match!")
                 return_list.append(item)
 
     return return_list
 
 
+def generate_webshop_url(product_id):
+    return "https://www.ah.nl/producten/product/wi" + str(product_id)
+
+
 def format_item(item_json):
     """Format json items into a human-readable format."""
 
-    # Temp
-    return item_json['title']
+    item_string = item_json["title"] + "\t" + item_json["subtitle"] + "\n"
+
+    # Show segment type if it's not a national Albert Heijn discount
+    if item_json["segmentType"] != "AH":
+        item_string += item_json["segmentType"] + "\n"
+
+    if "was" in item_json["price"]:
+        item_string += "was: " + str(item_json["price"]["was"]) + "\t"
+
+    item_string += "nu: " + str(item_json["price"]["now"]) + "\n"
+
+    maximum = 5
+    for product_id in item_json["productIds"]:
+        item_string += generate_webshop_url(product_id) + "\n"
+        maximum -= 1
+
+        if maximum <= 0:
+            item_string += "... and more\n"
+            break
+
+    return item_string
+
+
+with open("bonus.html") as f:
+    bonus_html_text = f.read()
+
+bonus_url = "https://www.ah.nl/bonus"
+r = requests.get(bonus_url)
+
+bonus_json = extract_json_from_bonus_html_page(r.text)
+
+config_file_path = "config.yaml"
+
+with open(config_file_path) as f:
+    config_file_data = f.read()
+
+conf = yaml.load(config_file_data, yaml.Loader)
+
+for collection in conf["collections"]:
+    matches = check_collection(
+            bonus_json,
+            conf["collections"][collection]["number"],
+            conf["collections"][collection]["keywords"]
+        )
+
+    for match in matches:
+        print(format_item(match))
