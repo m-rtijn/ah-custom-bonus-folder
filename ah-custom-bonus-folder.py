@@ -127,9 +127,6 @@ def format_item(item_json):
     return item_string
 
 
-with open("bonus.html") as f:
-    bonus_html_text = f.read()
-
 bonus_url = "https://www.ah.nl/bonus"
 r = requests.get(bonus_url)
 
