@@ -32,50 +32,63 @@ from bs4 import BeautifulSoup
 with open("bonus.html") as f:
     testdata = f.read()
 
-soup = BeautifulSoup(testdata, "html.parser")
 
-bonus_data_json_text = ""
+def retrieve_json_from_bonus_html_page(html_text):
+    """Extract the json from the bonus html page
 
-# Retrieve the bonus data in JSON format from the html
-for script in soup.find_all("script"):
-    if script.string is not None:
-        script_string_stripped = script.string.strip()
+    html_text -- a string with the html text
+    returns the parsed data from the json
+    """
+    soup = BeautifulSoup(testdata, "html.parser")
 
-        # Check if we found the script tag with the json with discount information
-        if script_string_stripped.startswith("window.__INITIAL_STATE__="):
-            bonus_data_json_text = script_string_stripped.replace(
-                "window.__INITIAL_STATE__= ", "")
-            bonus_data_json_text = bonus_data_json_text.replace(":undefined}",":\"undefined\"}")
-            bonus_data_json_text = bonus_data_json_text.replace(":undefined,",":\"undefined\",")
+    bonus_data_json_text = ""
 
-bonus_json = json.loads(bonus_data_json_text)
+    # Retrieve the bonus data in JSON format from the html
+    for script in soup.find_all("script"):
+        if script.string is not None:
+            script_string_stripped = script.string.strip()
 
-# Collections table
-#  0 header
-#  1 personal bonus segments
-#  2 personal bonus box
-#  3 personal bonus products
-#  4 spotlight
-#  5 free delivery
-#  6 bezorg-bundel
-#  7 landelijke bonus
-#  8 ahonline
-#  9 gall
-# 10 gallcard
-# 11 etos
-# 12 ads
-# 13 total bonus products
+            # Check if we found the script tag with the json with discount
+            # information
+            if script_string_stripped.startswith("window.__INITIAL_STATE__="):
+                bonus_data_json_text = script_string_stripped.replace(
+                    "window.__INITIAL_STATE__= ", "")
+                bonus_data_json_text = bonus_data_json_text.replace(
+                        ":undefined}", ":\"undefined\"}")
+                bonus_data_json_text = bonus_data_json_text.replace(
+                        ":undefined,", ":\"undefined\",")
 
-LANDELIJKE_BONUS = 7
-ETOS_COLLECTION = 11
+    return json.loads(bonus_data_json_text)
+
 
 def check_collection(b_json, collection, keywords):
     """Check for a list of items in a specified collection.
 
-    b_json - the parsed json with bonus data (parsed json)
-    collection - the number of the collection to search in (int)
-    keywords - the keywords to look for (list of uncapitalized strings)
-    Returns a list of json items that matched"""
+    b_json -- the parsed json with bonus data (parsed json)
+    collection -- the number of the collection to search in (int)
+    keywords -- the keywords to look for (list of uncapitalized strings)
+
+    Returns a list of json items that matched
+
+    Valid collection number table
+    0 header
+    1 personal bonus segments
+    2 personal bonus box
+    3 personal bonus products
+    4 spotlight
+    5 free delivery
+    6 bezorg-bundel
+    7 landelijke bonus
+    8 ahonline
+    9 gall
+    10 gallcard
+    11 etos
+    12 ads
+    13 total bonus products
+    """
+
+    if collection < 0 or collection > 13:
+        raise IndexError("Invalid collection number")
 
     return_list = []
 
@@ -87,6 +100,7 @@ def check_collection(b_json, collection, keywords):
                 return_list.append(item)
 
     return return_list
+
 
 def format_item(item_json):
     """Format json items into a human-readable format."""
